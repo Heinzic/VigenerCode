@@ -37,25 +37,26 @@ function App() {
     return text;
   };
 
+// находим сдвиг для каждого символа 
   const shiftChar = (letter: string, shift: number): string => {
-    let alpha: string;
-    let rangeSize: number;
+    let alphabet: string;
+    let alfabetSize: number;
 
     if (RUSSIAN_ALPHABET.includes(letter)) {
-        alpha = RUSSIAN_ALPHABET;
-        rangeSize = 32;
+        alphabet = RUSSIAN_ALPHABET;
+        alfabetSize = 32;
     } else if (LATIN_ALPHABET.includes(letter)) {
-        alpha = LATIN_ALPHABET;
-        rangeSize = 26;
+        alphabet = LATIN_ALPHABET;
+        alfabetSize = 26;
     } else {
         return letter; // Возвращаем символ как есть, если он не в алфавите
     }
 
-    shift = shift % rangeSize; // Учитываем циклический сдвиг
-    const index = alpha.indexOf(letter); // Находим индекс символа
-    return alpha[(index + shift + rangeSize) % rangeSize]; // Возвращаем сдвинутый символ
+    shift = shift % alfabetSize; // Учитываем циклический сдвиг
+    const index = alphabet.indexOf(letter); // Находим индекс символа
+    return alphabet[(index + shift + alfabetSize) % alfabetSize]; // Возвращаем сдвинутый символ
   };
-
+// функция кодирования
   const vigenereEncrypt = (text: string, key: string): string => {
     key = preprocessText(key);
     if (!key) return text; // Если ключ пустой, возвращаем текст без изменений
@@ -89,7 +90,7 @@ function App() {
 
     return encryptedArray.join(''); // Возвращаем зашифрованный текст как строку
   };
-
+// функция декодирования
   const vigenereDecrypt = (text: string, key: string): string => {
     key = preprocessText(key);
     if (!key) return text; // Если ключ пустой, возвращаем текст без изменений
@@ -105,20 +106,20 @@ function App() {
           decryptedArray.push(letter); // Если символ не в алфавите, добавляем его в результат
         }
 
-        const k = key[keyIndex % keyLength]; // Получаем соответствующий символ из ключа
+        const keyChar = key[keyIndex % keyLength]; // Получаем соответствующий символ из ключа
         let shift: number;
 
         // Находим сдвиг для ключевого символа
-        if (RUSSIAN_ALPHABET.includes(k)) {
-            shift = RUSSIAN_ALPHABET.indexOf(k);
-        } else if (LATIN_ALPHABET.includes(k)) {
-            shift = LATIN_ALPHABET.indexOf(k);
+        if (RUSSIAN_ALPHABET.includes(keyChar)) {
+            shift = RUSSIAN_ALPHABET.indexOf(keyChar);
+        } else if (LATIN_ALPHABET.includes(keyChar)) {
+            shift = LATIN_ALPHABET.indexOf(keyChar);
         } else {
             shift = 0; // Если символ не в алфавите, сдвиг 0
         }
 
-        const dec = shiftChar(letter, -shift); // Дешифруем символ (сдвиг в обратном направлении)
-        decryptedArray.push(dec); // Добавляем расшифрованный символ в результат
+        const decryptedLetter = shiftChar(letter, -shift); // Дешифруем символ (сдвиг в обратном направлении)
+        decryptedArray.push(decryptedLetter); // Добавляем расшифрованный символ в результат
         keyIndex++; // Увеличиваем индекс ключа
     }
 
@@ -239,8 +240,8 @@ function App() {
     for (const lengthVal of possibleLengths) {
         lengthFrequency[lengthVal] = (lengthFrequency[lengthVal] || 0) + 1;
     }
-
-    let maxCount = 0;
+    // maxCount - значение частоты для вероятной длины ключа
+    let maxCount = 0; 
     let likelyLength = 1;
 
     for (const [key, value] of Object.entries(lengthFrequency)) {
@@ -264,26 +265,26 @@ function App() {
         keyLength = 1;
     }
 
-    const bestShiftForColumn = (columnText: string, expectedFreq: FreqMap): number => {
+    const bestShiftForColumn = (columnText: string, expectedFrequency: FreqMap): number => {
         if (!columnText) {
             return 0;
         }
 
-        let bestErr = Infinity;
+        let bestError = Infinity;
         let bestShift = 0;
-        const alpha = RUSSIAN_ALPHABET;
+        const alphabet = RUSSIAN_ALPHABET;
 
-        for (let s = 0; s < alpha.length; s++) {
-            const decCol = columnText.split('').map(c => shiftChar(c, -s)).join('');
-            const decFreq = frequencyAnalysis(decCol);
+        for (let s = 0; s < alphabet.length; s++) {
+            const decodedColumn = columnText.split('').map(c => shiftChar(c, -s)).join('');
+            const decodedFrequency = frequencyAnalysis(decodedColumn);
 
-            if (!decFreq || Object.keys(decFreq).length === 0) { // Если пусто, значит колонка пуста или некорректна
+            if (!decodedFrequency || Object.keys(decodedFrequency).length === 0) { // Если пусто, значит колонка пуста или некорректна
                 continue;
             }
 
-            const err = leastSquaresMethod(decFreq, expectedFreq);
-            if (err < bestErr) {
-                bestErr = err;
+            const error = leastSquaresMethod(decodedFrequency, expectedFrequency);
+            if (error < bestError) {
+                bestError = error;
                 bestShift = s;
             }
         }
@@ -292,23 +293,22 @@ function App() {
     };
 
     // Если текст очень короткий, нет смысла взламывать
-    if (text.length < 5) {
-        // Предположим ключ длины 1, но предупредим
-        return ["а", vigenereDecrypt(text, "а")];
-    }
+    // if (text.length < 5) {
+    //     // Предположим ключ длины 1, но предупредим
+    //     return ["а", vigenereDecrypt(text, "а")];
+    // }
 
     const columns = Array.from({ length: keyLength }, (_, j) =>
         text.split('').filter((_, i) => i % keyLength === j).join('')
     );
 
     // Проверяем, что колонки не пустые
-    if (!columns.every(col => col.length > 0)) {
-        // Если слишком малая длина ключа или странный текст
+    if (!columns.every(column => column.length > 0)) {
+        // Если слишком малая длина ключа
         return ["а", vigenereDecrypt(text, "а")];
     }
 
-    // Должен соответствовать типу number[]
-    const shifts = columns.map(col => bestShiftForColumn(col, RUSSIAN_FREQ));
+    const shifts = columns.map(column => bestShiftForColumn(column, RUSSIAN_FREQ));
 
     // Формируем ключ из сдвигов
     const key = shifts.map(s => RUSSIAN_ALPHABET[s]).join('');
