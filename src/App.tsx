@@ -21,7 +21,7 @@ const RUSSIAN_FREQ: { [key: string]: number } = {
 };
 
 const RUSSIAN_ALPHABET = 'абвгдежзийклмнопрстуфхцчшщъыьэюя';
-const LATIN_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+// const LATIN_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
 function App() {
   const preprocessText = (text: string): string => {
@@ -29,7 +29,7 @@ function App() {
     text = text.replace(/ё/gi, 'е').toLowerCase();
     
     // Разрешенные символы
-    const allowedLetters = RUSSIAN_ALPHABET + LATIN_ALPHABET;
+    const allowedLetters = RUSSIAN_ALPHABET;
     
     // Фильтруем символы, оставляя только разрешенные
     text = [...text].filter(letters => allowedLetters.includes(letters)).join('');
@@ -45,16 +45,13 @@ function App() {
     if (RUSSIAN_ALPHABET.includes(letter)) {
         alphabet = RUSSIAN_ALPHABET;
         alfabetSize = 32;
-    } else if (LATIN_ALPHABET.includes(letter)) {
-        alphabet = LATIN_ALPHABET;
-        alfabetSize = 26;
     } else {
         return letter; // Возвращаем символ как есть, если он не в алфавите
     }
 
     shift = shift % alfabetSize; // Учитываем циклический сдвиг
     const index = alphabet.indexOf(letter); // Находим индекс символа
-    return alphabet[(index + shift + alfabetSize) % alfabetSize]; // Возвращаем сдвинутый символ
+    return alphabet[(index + shift) % alfabetSize]; // Возвращаем сдвинутый символ
   };
 // функция кодирования
   const vigenereEncrypt = (text: string, key: string): string => {
@@ -67,7 +64,7 @@ function App() {
 
     for (const letter of text) {
       // Определяем, в каком алфавите находится символ
-      if (!RUSSIAN_ALPHABET.includes(letter) && !LATIN_ALPHABET.includes(letter)) {
+      if (!RUSSIAN_ALPHABET.includes(letter)) {
         encryptedArray.push(letter); // Если символ не в алфавите, добавляем его в результат
       }
 
@@ -77,8 +74,6 @@ function App() {
       // Находим сдвиг для ключевого символа
       if (RUSSIAN_ALPHABET.includes(keyChar)) {
           shift = RUSSIAN_ALPHABET.indexOf(keyChar);
-      } else if (LATIN_ALPHABET.includes(keyChar)) {
-          shift = LATIN_ALPHABET.indexOf(keyChar);
       } else {
           shift = 0; // Если символ не в алфавите, сдвиг 0
       }
@@ -102,7 +97,7 @@ function App() {
     for (const letter of text) {
 
         // Определяем, в каком алфавите находится символ
-        if (!RUSSIAN_ALPHABET.includes(letter) && !LATIN_ALPHABET.includes(letter)) {
+        if (!RUSSIAN_ALPHABET.includes(letter)) {
           decryptedArray.push(letter); // Если символ не в алфавите, добавляем его в результат
         }
 
@@ -112,8 +107,6 @@ function App() {
         // Находим сдвиг для ключевого символа
         if (RUSSIAN_ALPHABET.includes(keyChar)) {
             shift = RUSSIAN_ALPHABET.indexOf(keyChar);
-        } else if (LATIN_ALPHABET.includes(keyChar)) {
-            shift = LATIN_ALPHABET.indexOf(keyChar);
         } else {
             shift = 0; // Если символ не в алфавите, сдвиг 0
         }
@@ -142,6 +135,7 @@ function App() {
 
     for (const letter of text) {
         frequencyList[letter] = (frequencyList[letter] || 0) + 1; // Увеличиваем счетчик для каждого символа
+        // ключ - буква, значение - кол-во в входном тексте
     }
 
     const total = Object.values(frequencyList).reduce((sum, count) => sum + count, 0); // Суммируем все частоты
@@ -159,17 +153,18 @@ function App() {
   };
 
   const leastSquaresMethod = (frequencies: { [key: string]: number }, expectedFrequencies: { [key: string]: number }): number => {
+    // по методу наименьших квадратов минимизируем сумму квадратов отклонения частот символов в группе от табличных частот
     let error = 0;
 
     for (const letter in frequencies) {
-        const expected = expectedFrequencies[letter] || 0; // Получаем ожидаемую частоту или 0, если ее нет
+        const expected = expectedFrequencies[letter] || 0; // Получаем ожидаемую частоту для каждой буквы или 0, если ее нет
         error += Math.pow(frequencies[letter] - expected, 2); // Увеличиваем ошибку на квадрат разности
     }
 
     return error; // Возвращаем общую ошибку
   };
 
-  const myGCD = (a: number, b: number): number => {
+  const findGCD = (a: number, b: number): number => {
     while (b !== 0) {
         const temp = b; // Сохраняем значение b во временной переменной
         b = a % b;     // Обновляем b как остаток от деления a на b
@@ -182,8 +177,8 @@ function App() {
     const sequences: { [key: string]: number[] } = {}; // Объект для хранения последовательностей и их позиций
     const length = text.length;
 
-    // Проходим по длинам подстрок от seqLen до половины длины текста
-    for (let lengthSubseq = seqLen; lengthSubseq <= Math.floor(length / 2); lengthSubseq++) {
+    // Проходим по длинам подстрок от seqLen до длины текста
+    for (let lengthSubseq = seqLen; lengthSubseq <= Math.floor(length); lengthSubseq++) {
         for (let i = 0; i <= length - lengthSubseq; i++) {
             const sequence = text.substring(i, i + lengthSubseq); // Получаем подстроку
             const j = text.indexOf(sequence, i + 1); // Ищем повтор
@@ -204,7 +199,7 @@ function App() {
     );
   };
 
-  const kasiskiExamination = (text: string): number => {
+  const kasiskiMethod = (text: string): number => {
     const sequences = findRepeatedSequences(text); // Находим повторяющиеся последовательности
     const distances: number[] = [];
 
@@ -223,7 +218,7 @@ function App() {
 
     for (let i = 0; i < distances.length; i++) {
         for (let j = i + 1; j < distances.length; j++) {
-            const g = myGCD(distances[i], distances[j]); // Находим НОД
+            const g = findGCD(distances[i], distances[j]); // Находим НОД
             if (g > 1) {
                 possibleLengths.push(g); // Добавляем, если НОД больше 1
             }
@@ -234,17 +229,21 @@ function App() {
         return 1; // Если не найдено возможных длин, возвращаем 1
     }
 
-    // Подсчитываем частоту длин
+    // Создает словарь со счетчиками встречаемости возможных длин.
+    
     const lengthFrequency: { [key: number]: number } = {};
-
+    // дообъяснить
+    // ОБЪЕКТ, КЛЮЧ - ВОЗМОЖНАЯ ДЛИНА КЛЮЧА, ЗНАЧЕНИЕ - КОЛ-ВО ПОЯВЛЕНИЙ В МАССИВЕ possibleLengths
+    // перебираем все возмодные длины, для каждой увеличиваем счетчик 
     for (const lengthVal of possibleLengths) {
         lengthFrequency[lengthVal] = (lengthFrequency[lengthVal] || 0) + 1;
     }
-    // maxCount - значение частоты для вероятной длины ключа
+    // maxCount - количество выпадений ключа длины likelyLength
     let maxCount = 0; 
     let likelyLength = 1;
 
     for (const [key, value] of Object.entries(lengthFrequency)) {
+      // Если текущий счетчик появвления больше найденного
         if (value > maxCount) {
             maxCount = value;
             likelyLength = Number(key); // Обновляем вероятную длину
@@ -259,8 +258,8 @@ function App() {
     if (!text) {
         return ["", text];
     }
-
-    let keyLength = kasiskiExamination(text);
+    // получаем длину ключа
+    let keyLength = kasiskiMethod(text);
     if (keyLength < 1) {
         keyLength = 1;
     }
@@ -274,8 +273,10 @@ function App() {
         let bestShift = 0;
         const alphabet = RUSSIAN_ALPHABET;
 
-        for (let s = 0; s < alphabet.length; s++) {
-            const decodedColumn = columnText.split('').map(c => shiftChar(c, -s)).join('');
+        for (let shift = 0; shift < alphabet.length; shift++) {
+            // сдвигаем со знаком -, тк для декодирования нужно сдвигать буквы по индексам назад
+            const decodedColumn = columnText.split('').map(c => shiftChar(c, -shift)).join('');
+            // после сдвига всех символов анализируем их частоты
             const decodedFrequency = frequencyAnalysis(decodedColumn);
 
             if (!decodedFrequency || Object.keys(decodedFrequency).length === 0) { // Если пусто, значит колонка пуста или некорректна
@@ -283,9 +284,11 @@ function App() {
             }
 
             const error = leastSquaresMethod(decodedFrequency, expectedFrequency);
+            // если ошибка меньше, чем уже найденная, значит частоты в колонне больше подходят заданным частотам, 
+            // следовательно сдвиг на данной итерации больше похож на правду
             if (error < bestError) {
                 bestError = error;
-                bestShift = s;
+                bestShift = shift;
             }
         }
 
@@ -297,7 +300,7 @@ function App() {
     //     // Предположим ключ длины 1, но предупредим
     //     return ["а", vigenereDecrypt(text, "а")];
     // }
-
+    // находим колонны с одинаковыми индексами, соглласно длине ключа (каждый 1-й, каждый 2-й и тд)
     const columns = Array.from({ length: keyLength }, (_, j) =>
         text.split('').filter((_, i) => i % keyLength === j).join('')
     );
@@ -310,14 +313,14 @@ function App() {
 
     const shifts = columns.map(column => bestShiftForColumn(column, RUSSIAN_FREQ));
 
-    // Формируем ключ из сдвигов
+    // Формируем ключ из сдвигов, 0 сдвиг - буква а в ключе и тд
     const key = shifts.map(s => RUSSIAN_ALPHABET[s]).join('');
     const decryptedText = vigenereDecrypt(text, key);
 
     return [key, decryptedText];
   };
 
-  const {register, watch} = useForm<Inputs>()
+  const {register, watch, resetField} = useForm<Inputs>()
 
   const [error, setError] = useState('')
   const [result, setResult] = useState('')
@@ -335,6 +338,10 @@ function App() {
         setError('Введите ключ для шифрования')
         return
     }
+    if (!preprocessKey(key)) {
+        setError('Неверный формат ключа')
+        return
+    }
 
     const text = preprocessText(initText)
 
@@ -345,6 +352,18 @@ function App() {
 
     const result = groupFive(vigenereEncrypt(text, key))
     return setResult(result)
+  }
+
+  const preprocessKey = (key: string) => {
+    key = key.replace(/ё/gi, 'е').toLowerCase();
+    
+    // Разрешенные символы
+    const allowedLetters = RUSSIAN_ALPHABET;
+    
+    // Фильтруем символы, оставляя только разрешенные
+    const newKey = [...key].filter(letters => allowedLetters.includes(letters)).join('');
+    
+    return key === newKey;
   }
 
   const handleDecrypt = () => {
@@ -358,6 +377,10 @@ function App() {
     }
     if (!key) {
         setError('Введите ключ для расшифрования')
+        return
+    }
+    if (!preprocessKey(key)) {
+        setError('Неверный формат ключа')
         return
     }
 
@@ -397,7 +420,7 @@ function App() {
 
   return (
     <div className='flex flex-col gap-[20px]'>
-      <h1 className='text-[60px]'>Шифр Вижинера</h1>
+      <h1 className='text-[60px]'>Шифр Виженера</h1>
       <div className="flex justify-between gap-[15px]">
         <h2 className='text-[30px]'>Текст</h2>
         <textarea {...register("text", { required: true })} className='flex-grow h-[80px] px-[10px]'/>
@@ -430,6 +453,15 @@ function App() {
             handleBreak()
             }}>
             Взломать
+        </button>
+        <button onClick={(e) => {
+            e.preventDefault()
+            setError('')
+            setResult('')
+            resetField('key')
+            resetField('text')
+            }}>
+            Очистить все
         </button>
       </div>
       <div className="max-w-[80%] whitespace-pre-line mx-auto">
